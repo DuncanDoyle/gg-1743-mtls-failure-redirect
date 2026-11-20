@@ -1,0 +1,43 @@
+# Turns the RBAC 403 on the "https" listener into a 302 to the diary page, with the failure reason.
+# ${DIARY_URL} is substituted by install/setup.sh (default: http://diary.example.com).
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: ListenerPolicy
+metadata:
+  name: mtls-failure-redirect
+  namespace: ingress-gw
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gw
+      sectionName: https
+  default:
+    httpSettings:
+      localReplies:
+        mappers:
+          # No client certificate at all.
+          - filter:
+              andFilter:
+                - statusCodeFilter:
+                    op: EQ
+                    value: 403
+                - celFilter:
+                    match: "!connection.mtls" # <--
+            statusCode: 302
+            headers:
+              set:
+                - name: Location
+                  value: "${DIARY_URL}/?reason=no-cert"
+          # A client certificate that failed validation (e.g. signed by an untrusted CA).
+          - filter:
+              andFilter:
+                - statusCodeFilter:
+                    op: EQ
+                    value: 403
+                - celFilter:
+                    match: "connection.mtls && !connection.peer_certificate_valid" # <--
+            statusCode: 302
+            headers:
+              set:
+                - name: Location
+                  value: "${DIARY_URL}/?reason=invalid-cert"

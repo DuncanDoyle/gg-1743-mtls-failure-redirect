@@ -1,0 +1,19 @@
+# Denies (403) every request on the "https" listener that didn't present a valid client certificate.
+# Thanks to AllowInsecureFallback on the Gateway, these requests reach the HTTP layer instead of failing the handshake.
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: TrafficPolicy
+metadata:
+  name: require-valid-client-cert
+  namespace: ingress-gw
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gw
+      sectionName: https # <-- Attached to the listener, so it covers every route on it.
+  rbac:
+    action: Deny
+    policy:
+      matchExpressions:
+        # <-- False when no cert was sent, or when the cert failed validation (needs Envoy >= 1.39).
+        - "!connection.peer_certificate_valid"

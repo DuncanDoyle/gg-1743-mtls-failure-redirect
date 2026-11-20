@@ -42,4 +42,9 @@ kubectl apply -f referencegrants/httpbin-ns/default-ns-httproute-service-rg.yaml
 printf "\nDeploy HTTPRoute ...\n"
 kubectl apply -f routes/api-example-com-httproute.yaml
 
+# Policies: deny requests without a valid client cert, and redirect them to the diary.
+printf "\nDeploy mTLS failure policies ...\n"
+kubectl apply -f policies/require-valid-client-cert-trafficpolicy.yaml
+envsubst '${DIARY_URL}' < policies/mtls-failure-redirect-listenerpolicy.yaml | kubectl apply -f -
+
 popd
