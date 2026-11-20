@@ -1,0 +1,51 @@
+kind: Gateway
+apiVersion: gateway.networking.k8s.io/v1
+metadata:
+  name: gw
+  namespace: ingress-gw
+spec:
+  gatewayClassName: enterprise-kgateway
+  infrastructure:
+    parametersRef:
+      name: custom-gw-params
+      group: enterprisekgateway.solo.io
+      kind: EnterpriseKgatewayParameters
+  tls:
+    frontend:
+      default:
+        validation:
+          caCertificateRefs:
+            - group: ""
+              kind: ConfigMap
+              name: client-ca
+          # <-- Complete the TLS handshake even when the client cert is missing or invalid,
+          #     so the gateway can still answer with an HTTP redirect.
+          mode: AllowInsecureFallback
+  listeners:
+    # mTLS-protected API. Requests without a valid client cert get redirected to the diary.
+    - protocol: HTTPS
+      port: 443
+      name: https
+      hostname: api.example.com
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: api-example-com-tls
+            kind: Secret
+      allowedRoutes:
+        namespaces:
+          from: Selector # Only allow routes from namespaces with the following label set.
+          selector:
+            matchLabels:
+              shared-gateway-access: "true"
+    # Plain HTTP listener for the diary page. No client cert check, so the redirect can't loop.
+    - protocol: HTTP
+      port: 80
+      name: http
+      hostname: diary.example.com
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              shared-gateway-access: "true"
