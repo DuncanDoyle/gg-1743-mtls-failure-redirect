@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Envoy's Diary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --line: 34px;            /* one ruled line; every vertical size on the page is a multiple of it */
+    --margin: 64px;          /* left edge of the red margin line */
+    --paper: #fffdf4;
+    --rule: #c3d3ec;
+    --margin-rule: #e39a9a;
+    --ink: #1f2f73;
+    --ink-red: #b3261e;
+    --desk: #6b4a2e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--desk) radial-gradient(circle at 30% 20%, #82603f, var(--desk) 70%);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 32px 16px;
+  }
+  .page {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: var(--line) 24px var(--line) calc(var(--margin) + 16px);
+    background-color: var(--paper);
+    /* Ruled lines start at the top of the content box, so text baselines sit on them. */
+    background-image:
+      linear-gradient(90deg, transparent var(--margin), var(--margin-rule) var(--margin), var(--margin-rule) calc(var(--margin) + 2px), transparent calc(var(--margin) + 2px)),
+      repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--line) - 1px), var(--rule) calc(var(--line) - 1px), var(--rule) var(--line));
+    /* Shifted up a little so the handwriting sits on the line rather than floating above it. */
+    background-position: 0 0, 0 calc(var(--line) - 6px);
+    box-shadow: 0 2px 4px rgba(0,0,0,.25), 0 18px 40px rgba(0,0,0,.35);
+    color: var(--ink);
+    font-family: "Caveat", "Bradley Hand", "Segoe Print", cursive;
+    font-size: 27px;
+    font-weight: 500;
+    line-height: var(--line);
+  }
+  .page p, .page h1 { margin: 0; font-size: inherit; line-height: var(--line); }
+  .page h1 { font-weight: 700; }
+  .date { text-align: right; }
+  .indent { padding-left: 1.2em; }
+  .sign { text-align: right; }
+  .page code {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: .55em;
+    line-height: 1;
+    padding: 0 .25em;
+    background: rgba(31, 47, 115, .08);
+    border-radius: 3px;
+  }
+  .page s { color: #6b6b6b; }
+  .no { color: var(--ink-red); font-weight: 700; }
+  .doodle { display: inline-block; transform: rotate(-8deg); }
+  .entry[hidden] { display: none; }
+
+  .notes {
+    max-width: 680px;
+    margin: 40px auto 0;
+    padding: 20px 24px;
+    background: #fff;
+    color: #1d1d1f;
+    border-radius: 6px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.3);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .notes h2 { margin: 0 0 8px; font-size: 17px; }
+  .notes ol { margin: 0; padding-left: 20px; }
+  .notes li { margin: 6px 0; }
+  .notes code { white-space: nowrap; font-family: ui-monospace, Menlo, monospace; font-size: 13px; background: #f0f0f3; padding: 1px 4px; border-radius: 3px; }
+  .notes a { color: #0b57d0; }
+  .notes a:hover { color: #083e94; text-decoration-thickness: 2px; }
+  .notes a:active { color: #052a66; }
+
+  @media (max-width: 520px) {
+    :root { --line: 30px; --margin: 40px; }
+    .page { font-size: 22px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<main class="page">
+  <p class="date" id="date">&nbsp;</p>
+
+  <section class="entry" data-reason="no-cert" hidden>
+    <h1>Dear diary,</h1>
+    <p>someone showed up at the door today. No certificate.</p>
+    <p>Not even a self-signed one. <span class="doodle">😶</span></p>
+    <p>I let them in anyway. <code>AllowInsecureFallback</code>. Don't judge me.</p>
+    <p>Then RBAC asked: <code>connection.mtls</code>?</p>
+    <p class="indent">… <span class="no">false.</span></p>
+    <p>So I gave them a 302 and a map to this page.</p>
+    <p>I hope they find their certificate. ♡</p>
+    <p class="sign">— Envoy</p>
+  </section>
+
+  <section class="entry" data-reason="invalid-cert" hidden>
+    <h1>Dear diary,</h1>
+    <p>this one <u>had</u> a certificate! I got so excited.</p>
+    <p>Then I read the issuer: "Totally Legit CA". <span class="doodle">🙄</span></p>
+    <p>I let them in anyway (<code>ACCEPT_UNTRUSTED</code>, I know, I know).</p>
+    <p>RBAC checked <code>peer_certificate_valid</code>: <s>true</s> <span class="no">false.</span></p>
+    <p>302. Off you go, to this page.</p>
+    <p>Some days I just want to reset the connection.</p>
+    <p class="sign">— Envoy</p>
+  </section>
+
+  <section class="entry" data-reason="none" hidden>
+    <h1>Dear diary,</h1>
+    <p>nobody got redirected today. Quiet day.</p>
+    <p>I proxied some requests and thought about my feelings.</p>
+    <p class="sign">— Envoy</p>
+  </section>
+</main>
+
+<aside class="notes">
+  <h2>What actually happened</h2>
+  <ol>
+    <li>The Gateway's frontend TLS validation uses <code>mode: AllowInsecureFallback</code>. The TLS handshake succeeds even without a valid client certificate.</li>
+    <li>A TrafficPolicy on the <code>https</code> listener denies the request with RBAC: <code>!connection.peer_certificate_valid</code>.</li>
+    <li>A ListenerPolicy local-reply mapper turns that 403 into a 302 to this page, adding <code>?reason=<span id="reason">…</span></code>.</li>
+  </ol>
+  <p>Reproducer for <a href="https://github.com/solo-io/gloo-gateway/issues/1743">gloo-gateway#1743</a>.</p>
+</aside>
+
+<script>
+  // Show the entry for ?reason=, falling back to the quiet-day entry.
+  const known = ["no-cert", "invalid-cert"];
+  const reason = new URLSearchParams(location.search).get("reason");
+  const shown = known.includes(reason) ? reason : "none";
+  document.querySelector(`.entry[data-reason="${shown}"]`).hidden = false;
+  document.getElementById("reason").textContent = shown === "none" ? "…" : shown;
+  document.getElementById("date").textContent = new Date().toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+</script>
+</body>
+</html>

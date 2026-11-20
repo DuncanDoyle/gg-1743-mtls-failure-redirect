@@ -35,4 +35,12 @@ check "1. valid client cert" 200 "" -- --cert certs/client.crt --key certs/clien
 check "2. no client cert" 302 "reason=no-cert" -- "$API_URL"
 check "3. rogue client cert" 302 "reason=invalid-cert" -- --cert certs/rogue-client.crt --key certs/rogue-client.key "$API_URL"
 
+# The diary must load without a client cert, or the redirect would loop.
+if curl -s "${RESOLVE[@]}" "${DIARY_PAGE}?reason=no-cert" | grep -q "Dear diary"; then
+  printf "PASS  %-28s diary page served without a client cert\n" "4. diary page"
+else
+  printf "FAIL  %-28s diary page not served at %s\n" "4. diary page" "$DIARY_PAGE"
+  FAILED=1
+fi
+
 exit $FAILED

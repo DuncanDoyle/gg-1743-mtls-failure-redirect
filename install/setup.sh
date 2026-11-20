@@ -42,6 +42,14 @@ kubectl apply -f referencegrants/httpbin-ns/default-ns-httproute-service-rg.yaml
 printf "\nDeploy HTTPRoute ...\n"
 kubectl apply -f routes/api-example-com-httproute.yaml
 
+# Envoy's diary: the page clients without a valid cert get redirected to.
+printf "\nDeploy the diary page ...\n"
+kubectl create namespace diary --dry-run=client -o yaml | kubectl apply -f -
+kubectl label namespaces diary --overwrite shared-gateway-access="true"
+kubectl -n diary create configmap diary-html --from-file=index.html=apis/diary/index.html --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f apis/diary.yaml
+kubectl apply -f routes/diary-example-com-httproute.yaml
+
 # Policies: deny requests without a valid client cert, and redirect them to the diary.
 printf "\nDeploy mTLS failure policies ...\n"
 kubectl apply -f policies/require-valid-client-cert-trafficpolicy.yaml

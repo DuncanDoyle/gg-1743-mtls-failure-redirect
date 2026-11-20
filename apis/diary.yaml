@@ -1,0 +1,44 @@
+# Static web server for Envoy's diary. The page itself comes from the "diary-html" ConfigMap (created by install/setup.sh).
+apiVersion: v1
+kind: Service
+metadata:
+  name: diary
+  namespace: diary
+  labels:
+    app: diary
+spec:
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: diary
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: diary
+  namespace: diary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: diary
+  template:
+    metadata:
+      labels:
+        app: diary
+    spec:
+      containers:
+        - name: nginx
+          image: nginxinc/nginx-unprivileged:1.27-alpine
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html
+              readOnly: true
+      volumes:
+        - name: html
+          configMap:
+            name: diary-html
