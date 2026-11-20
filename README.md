@@ -84,7 +84,20 @@ Open https://api.example.com/get. The browser sends no client cert, so you land 
 
 ## Known limitation: TLS session resumption
 
-Envoy doesn't re-validate the client certificate when a TLS session is resumed, so `connection.peer_certificate_valid` is `false` on a resumed session (see the warning on [`TlsContextMatchOptions.validated`](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-msg-config-route-v3-routematch-tlscontextmatchoptions)). Check 5 shows it: a client with a **valid** cert gets a 200 on a new session and is redirected as `invalid-cert` on a resumed one, on TLS 1.2 and 1.3. Browsers resume sessions all the time, so this matters in practice.
+Envoy doesn't re-validate the client certificate when a TLS session is resumed, so `connection.peer_certificate_valid` is `false` on a resumed session (see the warning on [`TlsContextMatchOptions.validated`](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-msg-config-route-v3-routematch-tlscontextmatchoptions)). Check 5 shows it: a client with a **valid** cert gets a 200 on a new session and is redirected as `invalid-cert` on a resumed one, on TLS 1.2 and 1.3.
+
+`browser-test.sh` shows the same in a real browser. It runs Chromium in Docker with the valid client cert in its certificate store, loads the API, then forces new connections that resume the TLS session (`chrome://net-internals` socket flush, which keeps the session cache). It needs Docker and the same `GW_IP`, `HTTPS_PORT` and `HTTP_PORT` settings as `curl-request.sh`:
+```
+GW_IP=127.0.0.1 HTTPS_PORT=8443 HTTP_PORT=8080 ./browser-test.sh
+```
+```
+PASS  1. first connection (full handshake)         https://api.example.com:8443/get (200)
+PASS  2. same connection                           https://api.example.com:8443/get (200)
+INFO  3. new connection (resumed TLS session)      http://diary.example.com:8080/?reason=invalid-cert (200)
+INFO  4. new connection (resumed TLS session)      http://diary.example.com:8080/?reason=invalid-cert (200)
+PASS  5. fresh browser profile (full handshake)    https://api.example.com:8443/get (200)
+```
+A user with a valid certificate is let in, then sent to the error page as soon as the browser opens a new connection, e.g. after an idle timeout or a network change.
 
 Envoy's workaround is to disable session resumption on the listener (`disable_stateless_session_resumption` and `disable_stateful_session_resumption` on the `DownstreamTlsContext`). These settings are not in the SEFK 2.4.1 CRDs or in the kgateway and SEFK API source.
 
