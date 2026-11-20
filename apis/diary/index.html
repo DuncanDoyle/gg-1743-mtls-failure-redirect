@@ -127,7 +127,7 @@
   <h2>What actually happened</h2>
   <ol>
     <li>The Gateway's frontend TLS validation uses <code>mode: AllowInsecureFallback</code>. The TLS handshake succeeds even without a valid client certificate.</li>
-    <li>A TrafficPolicy on the <code>https</code> listener denies the request with RBAC: <code>!connection.peer_certificate_valid</code>.</li>
+    <li>A TrafficPolicy on the <code>https</code> listener only allows requests where <code>connection.peer_certificate_valid</code> is true. RBAC returns a 403 for the rest.</li>
     <li>A ListenerPolicy local-reply mapper turns that 403 into a 302 to this page, adding <code>?reason=<span id="reason">…</span></code>.</li>
   </ol>
   <p>Reproducer for <a href="https://github.com/solo-io/gloo-gateway/issues/1743">gloo-gateway#1743</a>.</p>

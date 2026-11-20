@@ -1,5 +1,5 @@
 # Turns the RBAC 403 on the "https" listener into a 302 to the diary page, with the failure reason.
-# ${DIARY_URL} is substituted by install/setup.sh (default: http://diary.example.com).
+# ${DIARY_URL} is filled in by install/setup.sh (default: http://diary.example.com).
 apiVersion: gateway.kgateway.dev/v1alpha1
 kind: ListenerPolicy
 metadata:
@@ -22,7 +22,7 @@ spec:
                     op: EQ
                     value: 403
                 - celFilter:
-                    match: "!connection.mtls" # <--
+                    match: "!connection.mtls && response.code_details.startsWith('rbac_access_denied')" # <--
             statusCode: 302
             headers:
               set:
@@ -35,7 +35,7 @@ spec:
                     op: EQ
                     value: 403
                 - celFilter:
-                    match: "connection.mtls && !connection.peer_certificate_valid" # <--
+                    match: "connection.mtls && !connection.peer_certificate_valid && response.code_details.startsWith('rbac_access_denied')" # <--
             statusCode: 302
             headers:
               set:

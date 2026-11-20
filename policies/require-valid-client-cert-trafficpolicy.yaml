@@ -1,4 +1,4 @@
-# Denies (403) every request on the "https" listener that didn't present a valid client certificate.
+# Only allows requests on the "https" listener that presented a valid client certificate; everything else gets a 403.
 # Thanks to AllowInsecureFallback on the Gateway, these requests reach the HTTP layer instead of failing the handshake.
 apiVersion: gateway.kgateway.dev/v1alpha1
 kind: TrafficPolicy
@@ -12,8 +12,9 @@ spec:
       name: gw
       sectionName: https # <-- Attached to the listener, so it covers every route on it.
   rbac:
-    action: Deny
+    # <-- Allow, not Deny: if the attribute is missing (Envoy < 1.39), nothing matches and the request is denied.
+    action: Allow
     policy:
       matchExpressions:
-        # <-- False when no cert was sent, or when the cert failed validation (needs Envoy >= 1.39).
-        - "!connection.peer_certificate_valid"
+        # <-- True only when a cert was sent and passed validation.
+        - "connection.peer_certificate_valid"

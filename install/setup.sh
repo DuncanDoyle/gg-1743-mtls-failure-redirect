@@ -1,7 +1,8 @@
 #!/bin/sh
+set -e
 
 # Base URL the mTLS failure redirect points to. Override when the diary listener isn't on port 80.
-export DIARY_URL="${DIARY_URL:-http://diary.example.com}"
+DIARY_URL="${DIARY_URL:-http://diary.example.com}"
 
 pushd ..
 
@@ -22,6 +23,11 @@ kubectl -n ingress-gw create configmap client-ca --from-file=ca.crt=certs/ca.crt
 
 kubectl apply -f gateways/gw-parameters.yaml
 kubectl apply -f gateways/gw.yaml
+
+# Policies first, so the API route is never reachable without the client cert check.
+printf "\nDeploy mTLS failure policies ...\n"
+kubectl apply -f policies/require-valid-client-cert-trafficpolicy.yaml
+sed "s#\${DIARY_URL}#${DIARY_URL}#g" policies/mtls-failure-redirect-listenerpolicy.yaml | kubectl apply -f -
 
 # Create namespaces if they do not yet exist
 kubectl create namespace httpbin --dry-run=client -o yaml | kubectl apply -f -
@@ -49,10 +55,5 @@ kubectl label namespaces diary --overwrite shared-gateway-access="true"
 kubectl -n diary create configmap diary-html --from-file=index.html=apis/diary/index.html --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f apis/diary.yaml
 kubectl apply -f routes/diary-example-com-httproute.yaml
-
-# Policies: deny requests without a valid client cert, and redirect them to the diary.
-printf "\nDeploy mTLS failure policies ...\n"
-kubectl apply -f policies/require-valid-client-cert-trafficpolicy.yaml
-envsubst '${DIARY_URL}' < policies/mtls-failure-redirect-listenerpolicy.yaml | kubectl apply -f -
 
 popd
